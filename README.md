@@ -4,9 +4,15 @@ Warp terminal notifications for OpenCode, raised from the terminal client only.
 
 A local port of [`@warp-dot-dev/opencode-warp`](https://github.com/warpdotdev/opencode-warp), which targets the OpenCode V1 plugin API and cannot load on V2 (it exports a named `WarpPlugin` function; V2 requires a default export with an `id` and a `setup`/`effect` function — upstream issues #27, #29, #30, #31).
 
+Requires OpenCode V2 — the plugin API changed in 2.0 — and a Warp build that advertises the cli-agent protocol.
+
 ## Install
 
-Symlink the plugin into the global plugin directory:
+```sh
+git clone https://github.com/gdanov/opencode-warp ~/.config/opencode/plugins/warp
+```
+
+Or symlink a checkout, for development:
 
 ```sh
 ln -sfn "$PWD" ~/.config/opencode/plugins/warp
@@ -42,6 +48,24 @@ Notifications are also restricted to the terminal's own project: events from oth
 | turn finished | `stop` | `session.execution.succeeded` (query and response included) |
 
 Notifications are only emitted when Warp advertises cli-agent protocol support (`WARP_CLI_AGENT_PROTOCOL_VERSION`), so other terminals never see the escape sequence. Subagent sessions are silent.
+
+## Payload
+
+Each notification is one OSC 777 sequence carrying a JSON object:
+
+```json
+{"v":1,"agent":"opencode","event":"stop","session_id":"ses_…","cwd":"/path/to/project","project":"project","query":"…","response":"…","transcript_path":""}
+```
+
+`event` names the occurrence, `v` is the negotiated protocol version, and the rest describes the session. Warp reads the body, not the terminal.
+
+## Check it works
+
+Send a prompt in the TUI and end the turn. Warp should show a notification for the prompt and one for the finished turn. If nothing appears, turn on the debug log: `notify via /dev/tty` means the sequence was written to the terminal, `notify /dev/tty failed: ENXIO` means the process has no terminal at all, and `notify via stdout` means the sequence went nowhere.
+
+## Alongside the Claude Code Warp plugin
+
+The Claude Code plugin `warp@claude-code-warp` sends the same notifications from Claude Code hooks. When it is run inside OpenCode through the [Claude Code bridge](https://github.com/gdanov/claude-opencode-bridge), those hooks execute in the OpenCode service, which has no terminal, so they cannot reach Warp and nothing is duplicated.
 
 ## Debugging
 
