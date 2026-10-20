@@ -1,0 +1,25 @@
+{
+  "name": "opencode-warp",
+  "version": "0.2.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Warp terminal notifications for OpenCode, from the terminal client only.",
+  "exports": {
+    "./tui": "./tui.ts"
+  },
+  "files": [
+    "tui.ts",
+    "src"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "gate": "bun run typecheck && bun test"
+  },
+  "devDependencies": {
+    "@opencode/client": "2.1.0",
+    "@opencode/plugin": "2.1.0",
+    "@types/bun": "1.4.0",
+    "typescript": "5.9.3"
+  }
+}
