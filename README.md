@@ -59,9 +59,24 @@ Each notification is one OSC 777 sequence carrying a JSON object:
 
 `event` names the occurrence, `v` is the negotiated protocol version, and the rest describes the session. Warp reads the body, not the terminal.
 
+## Inside tmux
+
+tmux parses the escape sequences its panes emit and drops every OSC it does not handle itself, OSC 777 included, so a bare sequence never leaves the pane. When `TMUX` is set the plugin therefore wraps it in the DCS passthrough envelope tmux does forward, with the sequence's ESC bytes doubled:
+
+```
+ESC P tmux ; ESC ESC ] 777 ; notify ; warp://cli-agent ; <json> BEL ESC \
+```
+
+Two conditions apply to that path:
+
+- `set -g allow-passthrough on` in the tmux config. Without it tmux drops the envelope as well.
+- A transport that is a byte pipe: ssh or `et`. mosh is a terminal emulator since it syncs screen state instead of bytes, so it drops OSC/DCS outright and no notification of any kind can cross it — over mosh the terminal bell is the only channel that survives.
+
 ## Check it works
 
-Send a prompt in the TUI and end the turn. Warp should show a notification for the prompt and one for the finished turn. If nothing appears, turn on the debug log: `notify via /dev/tty` means the sequence was written to the terminal, `notify /dev/tty failed: ENXIO` means the process has no terminal at all, and `notify via stdout` means the sequence went nowhere.
+Send a prompt in the TUI and end the turn. Warp should show a notification for the prompt and one for the finished turn. If nothing appears, turn on the debug log: `notify via /dev/tty` means the sequence was written to the terminal, `notify via /dev/tty (tmux passthrough)` means it was wrapped for tmux, `notify /dev/tty failed: ENXIO` means the process has no terminal at all, and `notify via stdout` means the sequence went nowhere.
+
+When it is wrapped for tmux, tmux's own debug log (`tmux -v`, `tmux-server-*.log`) shows the receipt as `input_exit_osc: "777;notify;…"`. A line reading `input_exit_osc: unknown '777'` instead means the sequence arrived bare and was dropped.
 
 ## Alongside the Claude Code Warp plugin
 

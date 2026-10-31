@@ -2,7 +2,7 @@ import { Plugin } from "@opencode/plugin/tui"
 import { createWarpNotifier } from "./src/warp"
 import { debugLog } from "./src/debug"
 
-const PLUGIN_VERSION = "0.2.0"
+const PLUGIN_VERSION = "0.3.0"
 
 /**
  * Warp notifications, from the terminal client only.
